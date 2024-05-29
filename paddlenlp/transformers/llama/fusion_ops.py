@@ -41,7 +41,7 @@ try:
 except ImportError:
     fused_rotary_position_embedding = None
 try:
-    if get_env_device() in ["npu", "gcu"]:
+    if get_env_device() in ["npu", "mlu", "gcu"]:
         from paddle.base import core
 
         for lib in os.listdir(os.getenv("CUSTOM_DEVICE_ROOT")):
@@ -124,6 +124,8 @@ def rms_norm_fused(x_in, w, eps):
 def fusion_rms_norm(hidden_states, weight, variance_epsilon):
     if get_env_device() == "npu":
         return core.eager._run_custom_op("rms_norm_npu", hidden_states, weight, variance_epsilon)[0]
+    if get_env_device() == "mlu":
+        return core.eager._run_custom_op("rms_norm_mlu", hidden_states, weight, variance_epsilon)[0]
     elif get_env_device() == "gcu":
         return core.eager._run_custom_op("rms_norm_gcu", hidden_states, weight, variance_epsilon)[0]
     elif get_env_device() == "xpu":
