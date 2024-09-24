@@ -88,6 +88,12 @@ try:
         for lib in os.listdir(os.getenv("CUSTOM_DEVICE_ROOT")):
             if lib.endswith(".so"):
                 paddle.utils.cpp_extension.extension_utils.load_op_meta_info_and_register_op(lib)
+    if get_env_device() == "mlu":
+        from paddle.base import core
+
+        for lib in os.listdir(os.getenv("CUSTOM_DEVICE_ROOT")):
+            if lib.endswith(".so"):
+                paddle.utils.cpp_extension.extension_utils.load_op_meta_info_and_register_op(lib)
     from paddle.nn.functional.flash_attention import flash_attention
 except:
     flash_attention = None
@@ -356,7 +362,7 @@ def _make_causal_mask(input_ids_shape, past_key_values_length):
     """
     batch_size, target_length = input_ids_shape  # target_length: seq_len
 
-    if get_env_device() == "npu":
+    if get_env_device() == "npu" or get_env_device() == "mlu":
         mask = paddle.tril(paddle.ones((target_length, target_length))).astype("int32")
     else:
         mask = paddle.tril(paddle.ones((target_length, target_length), dtype="bool"))
@@ -376,7 +382,7 @@ def _expand_2d_mask(mask, dtype, tgt_length):
     batch_size, src_length = mask.shape[0], mask.shape[-1]
     tgt_length = tgt_length if tgt_length is not None else src_length
 
-    if get_env_device() == "npu":
+    if get_env_device() == "npu" or get_env_device() == "mlu":
         mask = mask[:, None, None, :].astype(dtype)
     else:
         mask = mask[:, None, None, :].astype("bool")
@@ -410,6 +416,9 @@ class LlamaRMSNorm(nn.Layer):
         if self.config.use_fused_rms_norm:
             if get_env_device() == "npu":
                 return core.eager._run_custom_op("rms_norm_npu", hidden_states, self.weight, self.variance_epsilon)[0]
+            if get_env_device() == "mlu":
+                return core.eager._run_custom_op("rms_norm_mlu", hidden_states, self.weight, self.variance_epsilon)[0]
+
             return rms_norm_fused(hidden_states, self.weight, self.variance_epsilon)
 
         if paddle.in_dynamic_mode():
@@ -1401,7 +1410,7 @@ class LlamaModel(LlamaPretrainedModel):
                     combined_attention_mask = _make_causal_mask(
                         input_shape, past_key_values_length=past_key_values_length
                     )
-                    if get_env_device() == "npu":
+                    if get_env_device() == "npu" or get_env_device() == "mlu":
                         expanded_attn_mask = expanded_attn_mask.astype("bool")
                         combined_attention_mask = combined_attention_mask.astype("bool")
                     expanded_attn_mask = expanded_attn_mask & combined_attention_mask
@@ -1414,7 +1423,7 @@ class LlamaModel(LlamaPretrainedModel):
         else:
             expanded_attn_mask = _make_causal_mask(input_shape, past_key_values_length=past_key_values_length)
         # Convert bool attention_mask to float attention mask, which will be added to attention_scores later
-        if get_env_device() == "npu":
+        if get_env_device() == "npu" or get_env_device() == "mlu":
             x = paddle.to_tensor(0.0, dtype="float16")
             y = paddle.to_tensor(paddle.finfo(dtype).min, dtype="float16")
             expanded_attn_mask = expanded_attn_mask.astype("float16")
@@ -1544,7 +1553,7 @@ class LlamaModel(LlamaPretrainedModel):
             attention_mask, (batch_size, seq_length), cache_length, inputs_embeds.dtype
         )  # [bs, 1, seq_len, seq_len]
         if self.config.use_flash_attention:
-            if get_env_device() != "npu":
+            if get_env_device() != "npu" or get_env_device() != "mlu":
                 is_casual = is_casual_mask(attention_mask)
                 if is_casual and alibi is None:
                     attention_mask = None
