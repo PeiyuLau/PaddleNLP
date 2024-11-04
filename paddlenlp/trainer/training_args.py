@@ -1043,9 +1043,10 @@ class TrainingArguments:
                                 "We will enforce that per_device_eval_batch_size=per_device_train_batch_size * gradient_accumulation_steps."
                             )
 
-                            self.per_device_eval_batch_size = (
-                                self.per_device_train_batch_size * self.gradient_accumulation_steps
-                            )
+                            #self.per_device_eval_batch_size = (
+                            #    self.per_device_train_batch_size * self.gradient_accumulation_steps
+                            #)
+                            self.per_device_eval_batch_size = self.per_device_eval_batch_size
 
                 if self.tensor_parallel_degree > 1:
                     strategy.tensor_parallel_configs = {"tensor_init_seed": self.seed}
@@ -1277,9 +1278,10 @@ class TrainingArguments:
                             "In pipeline model, the evaluation also shares same setting with training. "
                             "We will enforce that per_device_eval_batch_size=per_device_train_batch_size * gradient_accumulation_steps."
                         )
-                        self.per_device_eval_batch_size = (
-                            self.per_device_train_batch_size * self.gradient_accumulation_steps
-                        )
+                        #self.per_device_eval_batch_size = (
+                        #    self.per_device_train_batch_size * self.gradient_accumulation_steps
+                        #)
+                        self.per_device_eval_batch_size = self.per_device_eval_batch_size
 
             elif self.gradient_accumulation_steps > 1:
                 gradient_merge = strategy.gradient_merge

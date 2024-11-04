@@ -2844,6 +2844,8 @@ class Trainer:
         with paddle.no_grad():
             if has_labels:
                 with self.autocast_smart_context_manager():
+                    model.micro_batch_size = self.args.per_device_train_batch_size
+                    model.accumulate_steps = self.args.per_device_eval_batch_size // self.args.per_device_train_batch_size
                     loss = model.eval_batch([inputs, labels], compute_loss=True)
                     # loss, outputs = self.compute_loss(model, inputs, return_outputs=True)
                 loss = loss.mean().detach()
