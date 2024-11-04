@@ -57,7 +57,7 @@ def get_parser():
         "--device",
         type=str,
         default="gpu",
-        choices=["cpu", "eval_pathgpu", "xpu", "npu"],
+        choices=["cpu", "eval_pathgpu", "xpu", "npu", "mlu"],
         help="select cpu, gpu, xpu devices.",
     )
     parser.add_argument(
