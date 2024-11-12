@@ -8,4 +8,4 @@ python -u -m paddle.distributed.launch \
     --ips "$IPS" \
     --log_dir "log/log_llama_13b" \
     run_pretrain.py \
-    llama/pretrain-llama_13b-tp2pp1sd16_stage1.json 2>&1 | tee log_llama_4nodes
+    llama/pretrain-llama_13b-tp8pp1sd4_stage1.json 2>&1 | tee log_llama_4nodes
