@@ -318,6 +318,7 @@ def do_generation():
         tensor_parallel_rank=paddle.distributed.get_rank(),
         use_flash_attention=False,
         dtype=args.dtype,  # todo enable set dtype to avoid additional mem usage
+        sequence_parallel=False
     )
 
     model.eval()

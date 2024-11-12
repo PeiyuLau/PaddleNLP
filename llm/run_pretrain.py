@@ -408,8 +408,8 @@ def main():
     paddle.set_device(training_args.device)
     set_seed(seed=training_args.seed)
 
-    training_args.eval_iters = 10
-    training_args.test_iters = training_args.eval_iters * 10
+    training_args.eval_iters = 1
+    training_args.test_iters = training_args.eval_iters * 1
 
     # Log model and data config
     training_args.print_config(model_args, "Model")
@@ -602,7 +602,7 @@ def main():
         test_ret = trainer.predict(test_dataset)
         trainer.log_metrics("test", test_ret.metrics)
 
-    if training_args.should_load_dataset:
+    if training_args.do_train and training_args.should_load_dataset:
         effective_tokens_per_second = total_effective_tokens / train_result.metrics["train_runtime"]
         print(f"Effective Tokens per second: {effective_tokens_per_second:.2f}")
         print(f"ips: {effective_tokens_per_second:.2f} tokens/s")
