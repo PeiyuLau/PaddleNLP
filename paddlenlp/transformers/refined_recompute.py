@@ -30,7 +30,7 @@ from paddle.distributed.fleet.meta_parallel.parallel_layers.random import (
 )
 from paddle.distributed.fleet.recompute.recompute import check_recompute_necessary
 from paddle.distributed.fleet.recompute.recompute import recompute as original_recompute
-from paddle.distributed.fleet.recompute.recompute import switch_rng_state_tracker
+from paddle.distributed.fleet.recompute.recompute import swith_rng_state_tracker
 
 try:
     from paddle.distributed.fleet.utils import sequence_parallel_utils
@@ -387,7 +387,7 @@ def _recompute_without_reentrant(function, preserve_rng_state=True, *args, **kwa
             rng_cxt_manager = (
                 contextlib.nullcontext()
                 if not preserve_rng_state
-                else switch_rng_state_tracker(fw_cuda_rng_state, fwd_cuda_rng_state_tracker)
+                else swith_rng_state_tracker(fw_cuda_rng_state, fwd_cuda_rng_state_tracker)
             )
             with rng_cxt_manager:
                 with paddle.set_grad_enabled(True):

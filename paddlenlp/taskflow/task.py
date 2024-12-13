@@ -163,6 +163,9 @@ class Task(metaclass=abc.ABCMeta):
         elif paddle.get_device().split(":", 1)[0] == "npu":
             if self._infer_precision == "fp16":
                 logger.info("Inference on npu with fp16 precison")
+        elif paddle.get_device().split(":", 1)[0] == "mlu":
+            if self._infer_precision == "fp16":
+                logger.info("Inference on mlu with fp16 precison")
         else:
             if self._infer_precision == "fp16":
                 self._predictor_type = "onnxruntime"
@@ -203,6 +206,9 @@ class Task(metaclass=abc.ABCMeta):
         elif paddle.get_device().split(":", 1)[0] == "npu":
             self._config.disable_gpu()
             self._config.enable_custom_device("npu", self.kwargs["device_id"])
+        elif paddle.get_device().split(":", 1)[0] == "mlu":
+            self._config.disable_gpu()
+            self._config.enable_custom_device("mlu", self.kwargs["device_id"])
         else:
             if self._infer_precision == "int8":
                 logger.info(
@@ -361,6 +367,25 @@ class Task(metaclass=abc.ABCMeta):
                     # Here, npu sigmoid will lead to OOM and cpu sigmoid don't support fp16.
                     # So, we add sigmoid to black list temporarily.
                     black_list={"sigmoid"},
+                )
+                logger.info(
+                    "The inference model in fp16 precison save in the path:{}".format(self._static_fp16_model_file)
+                )
+            self._static_model_file = self._static_fp16_model_file
+            self._static_params_file = self._static_fp16_params_file
+        elif paddle.get_device().split(":", 1)[0] == "mlu" and self._infer_precision == "fp16":
+            # transform fp32 model tp fp16 model
+            self._static_fp16_model_file = self.inference_model_path + "-fp16.pdmodel"
+            self._static_fp16_params_file = self.inference_model_path + "-fp16.pdiparams"
+            if not os.path.exists(self._static_fp16_model_file) and not os.path.exists(self._static_fp16_params_file):
+                logger.info("Converting to the inference model from fp32 to fp16.")
+                paddle.inference.convert_to_mixed_precision(
+                    os.path.join(self._static_model_file),
+                    os.path.join(self._static_params_file),
+                    os.path.join(self._static_fp16_model_file),
+                    os.path.join(self._static_fp16_params_file),
+                    backend=paddle.inference.PlaceType.CUSTOM,
+                    mixed_precision=paddle.inference.PrecisionType.Half,
                 )
                 logger.info(
                     "The inference model in fp16 precison save in the path:{}".format(self._static_fp16_model_file)
